@@ -158,8 +158,8 @@ exports.deleteRepo = async (req, res) => {
   }
 };
 
-// Get categories and repos based on selected category
 exports.getCategoriesAndRepos = async (req, res) => {
+  console.log('Query Params:', req.query);
   try {
     const { category, sortBy, limit } = req.query;
 
@@ -169,7 +169,7 @@ exports.getCategoriesAndRepos = async (req, res) => {
 
     // Fetch repos based on category
     let query = {};
-    if (category && category !== 'All') query.category = category;
+    if (category && category !== 'All') query.category = category; // Ensure this condition is met
 
     let sort = {};
     switch (sortBy) {
