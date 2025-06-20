@@ -8,7 +8,6 @@ router.post('/repos', repoController.createRepo);
 router.post('/repos/bulk', repoController.createBulkRepos); // New bulk create route
 router.put('/repos/:id', repoController.updateRepo);
 router.delete('/repos/:id', repoController.deleteRepo);
-router.get('/categories', repoController.getCategories);
-router.get('/repos/category', repoController.getReposByCategory); // New route for getting repos by category
+router.get('/categories-and-repos', repoController.getCategoriesAndRepos); // New combined route
 
 module.exports = router;

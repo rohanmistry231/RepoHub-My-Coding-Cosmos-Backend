@@ -1,7 +1,7 @@
 const Repo = require('../models/Repo');
 
 const getRelativeTime = (date) => {
-  const now = new Date('2025-06-20T14:46:00+05:30'); // Updated to 03:46 PM IST
+  const now = new Date('2025-06-20T14:59:00+05:30'); // Updated to 03:59 PM IST
   const diffTime = Math.abs(now.getTime() - new Date(date).getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   if (diffDays === 1) return '1 day ago';
@@ -40,7 +40,6 @@ exports.createBulkRepos = async (req, res) => {
       return res.status(400).json({ message: 'Request body must be a non-empty array of repo objects' });
     }
 
-    // Validate and prepare repos for bulk insertion
     const validRepos = repos.map(repo => ({
       name: repo.name || `Unnamed-${Math.random().toString(36).substr(2, 9)}`,
       tagline: repo.tagline || '',
@@ -159,26 +158,19 @@ exports.deleteRepo = async (req, res) => {
   }
 };
 
-// Get unique categories
-exports.getCategories = async (req, res) => {
-  try {
-    const categories = await Repo.distinct('category');
-    res.json(['All', ...categories.sort()]);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get repos by category
-exports.getReposByCategory = async (req, res) => {
+// Get categories and repos based on selected category
+exports.getCategoriesAndRepos = async (req, res) => {
   try {
     const { category, sortBy, limit } = req.query;
 
-    if (!category || category === 'All') {
-      return res.status(400).json({ message: 'Category parameter is required and must not be "All"' });
-    }
+    // Fetch distinct categories
+    const categories = await Repo.distinct('category');
+    const allCategories = ['All', ...categories.sort()];
 
-    let query = { category };
+    // Fetch repos based on category
+    let query = {};
+    if (category && category !== 'All') query.category = category;
+
     let sort = {};
     switch (sortBy) {
       case 'stars':
@@ -204,6 +196,7 @@ exports.getReposByCategory = async (req, res) => {
     }));
 
     res.json({
+      categories: allCategories,
       repos: response,
       total: await Repo.countDocuments(query),
       remaining: (await Repo.countDocuments(query)) - (limit ? parseInt(limit) : repos.length)
