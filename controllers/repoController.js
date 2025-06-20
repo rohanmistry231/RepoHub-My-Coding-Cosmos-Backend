@@ -1,7 +1,7 @@
 const Repo = require('../models/Repo');
 
 const getRelativeTime = (date) => {
-  const now = new Date('2025-06-20T10:28:00+05:30'); // Current date and time in IST
+  const now = new Date('2025-06-20T14:46:00+05:30'); // Updated to 03:46 PM IST
   const diffTime = Math.abs(now.getTime() - new Date(date).getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   if (diffDays === 1) return '1 day ago';
@@ -164,6 +164,50 @@ exports.getCategories = async (req, res) => {
   try {
     const categories = await Repo.distinct('category');
     res.json(['All', ...categories.sort()]);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get repos by category
+exports.getReposByCategory = async (req, res) => {
+  try {
+    const { category, sortBy, limit } = req.query;
+
+    if (!category || category === 'All') {
+      return res.status(400).json({ message: 'Category parameter is required and must not be "All"' });
+    }
+
+    let query = { category };
+    let sort = {};
+    switch (sortBy) {
+      case 'stars':
+        sort.stars = -1;
+        break;
+      case 'updated':
+        sort.lastUpdated = -1;
+        break;
+      case 'name':
+        sort.name = 1;
+        break;
+      default:
+        sort.lastUpdated = -1;
+    }
+
+    const repos = await Repo.find(query)
+      .sort(sort)
+      .limit(limit ? parseInt(limit) : 0);
+
+    const response = repos.map(repo => ({
+      ...repo.toObject(),
+      lastUpdatedRelative: getRelativeTime(repo.lastUpdated)
+    }));
+
+    res.json({
+      repos: response,
+      total: await Repo.countDocuments(query),
+      remaining: (await Repo.countDocuments(query)) - (limit ? parseInt(limit) : repos.length)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
